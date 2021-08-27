@@ -10,8 +10,8 @@ $(document).ready(function () {
       var initial_data_request = true;
       var table = null;
       var page_no_requested_by_user = 1;
-      var filterTotal = 0;
-      var total = 0;
+      var filteredTotalCount = 0;
+      var totalCount = 0;
 
       // DataTable configureation
       var datatable_init_config = {
@@ -51,15 +51,17 @@ $(document).ready(function () {
                   data.LastEvaluatedKey;
               }
             }
-            var c = async () => {
-              count();
-            };
-            c();
+            // (() => {
+            //   setTimeout(function () {
+            //     updateDatatableCount();
+            //   }, 100);
+            // })();
+            updateDatatableCount();
 
             data = {
               draw: draw,
-              recordsTotal: data.ScannedCount,
-              recordsFiltered: data.Count,
+              recordsTotal: totalCount,
+              recordsFiltered: filteredTotalCount,
               data: data.Items,
             };
 
@@ -102,27 +104,27 @@ $(document).ready(function () {
           });
         },
       };
-      $("#search_form").submit(function (event) {
+      $("#search_form").submit(async function (event) {
         $("#show_requested_data_div").show("slow");
         if (initial_data_request || table == null) {
           table = $(datatable).DataTable(datatable_init_config);
           initial_data_request = false;
         } else {
-          table.draw();
+          console.time("load db data time");
+          await table.draw();
+          console.timeEnd("load db data time");
         }
         event.preventDefault();
       });
 
-      function count() {
-        filterTotal = 0;
-        total = 0;
+      function updateDatatableCount() {
+        filteredTotalCount = 0;
+        totalCount = 0;
         var api_data = dataToSend(true);
 
-        console.time("ajax");
-        ajaxCall(api_data);
-        console.timeEnd("ajax");
+        ajaxCallToCount(api_data);
       }
-      function ajaxCall(api_data) {
+      function ajaxCallToCount(api_data) {
         $.ajax({
           type: "POST",
           async: false, // set async false to wait for previous response
@@ -131,12 +133,12 @@ $(document).ready(function () {
           contentType: "application/json; charset=utf",
           data: api_data,
           success: function (data) {
-            filterTotal += data.Count;
-            total += data.ScannedCount;
+            filteredTotalCount += data.Count;
+            totalCount += data.ScannedCount;
             if (data.LastEvaluatedKey != undefined) {
               api_data = JSON.parse(api_data);
               api_data.ExclusiveStartKey = data.LastEvaluatedKey;
-              ajaxCall(JSON.stringify(api_data));
+              ajaxCallToCount(JSON.stringify(api_data));
             }
           },
         });

@@ -1,7 +1,7 @@
 var datatable = "#datatable";
 var lengthMenu = [
-  [10, 20, 25, 50],
-  [10, 20, 25, 50],
+  [500, 1000, 1500, 2000],
+  [500, 1000, 1500, 2000],
 ];
 var datatableColumns = [
   {
@@ -17,6 +17,6 @@ var datatableColumns = [
   { data: "SMTPresponse.S" },
 ];
 
-var pageLength = 2000;
+var pageLength = 500;
 var datatableMaxHeight = "280px";
 var tableHeightCollapseOnFewData = false;

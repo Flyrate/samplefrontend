@@ -4,7 +4,7 @@ var api_consistentRead = false;
 var api_indexName = "SESMessageType-Index";
 var filterStatus = false;
 var toFilter = true;
-var api_projectionExpression_onCount = "SESMessageType";
+var api_projectionExpression_onCount = "Subject";
 
 /**
  *
@@ -46,11 +46,13 @@ function apiDataObject(
   if (exclusiveStartKey != undefined) {
     data["ExclusiveStartKey"] = exclusiveStartKey;
   }
-  if (limit != undefined) {
-    data["Limit"] = limit;
-  }
+
   if (count == true) {
     data["ProjectionExpression"] = api_projectionExpression_onCount;
+  } else {
+    if (limit != undefined) {
+      data["Limit"] = limit;
+    }
   }
   return data;
 }
