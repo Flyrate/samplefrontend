@@ -34,7 +34,6 @@ function setFilterState(filterObject) {
       filter_state[key] = value;
     }
   }
-  console.log(filter_state);
 }
 function getAllFilterState() {
   return filter_state;

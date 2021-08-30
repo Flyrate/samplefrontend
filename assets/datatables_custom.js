@@ -59,11 +59,11 @@ $(document).ready(function () {
             let paginations_lastEvaluatedKey = data.LastEvaluatedKey;
 
             let page_length =
-              $(datatable).DataTable().page.len() <= 0
+              $(datatable).DataTable().page.len() == undefined
                 ? pageLength
                 : $(datatable).DataTable().page.len();
             if (
-              data.Items.length < page_length &&
+              datatable_data.length < page_length &&
               (data.LastEvaluatedKey != undefined ||
                 data.LastEvaluatedKey != null)
             ) {
@@ -119,7 +119,6 @@ $(document).ready(function () {
                   paginations_lastEvaluatedKey;
               }
             }
-
             $(datatable)
               .DataTable()
               .page(page_no_requested_by_user - 1);
@@ -188,9 +187,6 @@ $(document).ready(function () {
           );
           $(".paginate_button.next:not(.disabled) a").on("click", function () {
             page_no_requested_by_user = table.page.info().page + 2;
-            console.log(table.page.info().page);
-
-            console.log(page_no_requested_by_user);
           });
         },
       };
