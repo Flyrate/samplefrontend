@@ -22,7 +22,7 @@ function getRowToExportFromExistingRow(row) {
     row.sn,
     // for the header on the line no 5 use the data of line no 24 and so on
     row.SESMessageId.S,
-    row.SnsPublishTime.S,
+    serverDateToLocalDate(row.SnsPublishTime.S),
     row.Time.S,
     row.Subject.S,
     row.SESSenderAddress.S,

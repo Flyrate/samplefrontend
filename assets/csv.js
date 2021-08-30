@@ -1,6 +1,4 @@
 $(document).ready(function () {
-  $.getScript("assets/env/root_env.js", function () {
-    $.getScript("assets/env/csv_env.js", function () {
       let csv_data = [];
       let csv_loaded_data_count = 0;
       let serial_no = 1;
@@ -268,5 +266,3 @@ $(document).ready(function () {
         return new Promise((resolve) => setTimeout(resolve, ms));
       }
     });
-  });
-});

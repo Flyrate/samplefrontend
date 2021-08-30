@@ -22,12 +22,19 @@ let tableHeightCollapseOnFewData = false;
 // columns to display on the each and every cell of a row
 // Change this and th in index.html if you want to change the order of columns
 // Note: columns in the poistion in the 3, 4 and 5 should be fixed. Columns position count starts from
+
 let datatableColumns = [
   {
     data: "SnsPublishTime.S",
     width: "5%",
   },
-  { data: "SnsPublishTime.S", width: "20%" },
+  {
+    data: "SnsPublishTime.S",
+    width: "20%",
+    render: function (data, type, row, meta) {
+      return serverDateToLocalDate(data);
+    },
+  },
   { data: "Time.S", width: "7%" },
   { data: "Subject.S", width: "13%" },
   { data: "SESSenderAddress.S", width: "15%" },

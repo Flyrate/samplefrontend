@@ -1,5 +1,3 @@
-// this file contains the root environment that is required for both the csv and datatables
-
 // variables required for making the api_call for the api_call
 var api_url = "https://r0sh9ji2ge.execute-api.us-east-1.amazonaws.com/test";
 var api_tableName = "SMTPDeliveryNotifications";
@@ -8,6 +6,7 @@ var api_indexName = "SESMessageType-Index";
 var filterStatus = false;
 var toFilter = true;
 var api_projectionExpression_onCount = "Subject";
+// this file contains the root environment that is required for both the csv and datatables
 
 // maintain the state of the form
 // this is to ensure that the state of form is changed only when the request data button is pressed
@@ -42,6 +41,36 @@ function getFilterState(filter_info_to_get) {
   return filter_state[filter_info_to_get];
 }
 
+Date.prototype.toDateInputValue = function () {
+  var local = new Date(this);
+  local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+  return local.toJSON().slice(0, 10);
+};
+// set the default value of the date as todays date on the form
+function setTodayAsDefaultFromAndToDate() {
+  document.getElementById("from").value = new Date().toDateInputValue();
+  document.getElementById("to").value = new Date().toDateInputValue();
+}
+
+setTodayAsDefaultFromAndToDate();
+
+function serverDateToLocalDate(server_date) {
+  return server_date;
+  // you can conver the local date to server date from here, please write the code something like below
+  // the whole application will run smoothly by just changing the datetime conversion in two functions serverDateToLocalDate and localDateToServerDate
+  // Note: Please be careful about date format
+
+  // return moment.utc(server_date, "YYYY-MM-DD HH:mm:ss").local().format("YYYY-MM-DD HH:mm:ss");
+}
+
+function localDateToServerDate(local_date) {
+  return local_date;
+  // you can conver the local date to server date from here, please write the code something like below
+  // the whole application will run smoothly by just changing the datetime conversion in two functions serverDateToLocalDate and localDateToServerDate
+  // Note: Please be careful about date format
+
+  // return moment(local_date).utc().format("YYYY-MM-DD HH:mm:ss");
+}
 /**
  *
  * @param {number || undefined} limit => no of data of get at a time, if you want to get the maximum data that dynamoDB can return then set it to undefined.
@@ -60,10 +89,15 @@ function apiDataObject(
   let api_keyConditionExpression =
     "(SESMessageType = :SESMessageType AND SnsPublishTime BETWEEN :date1 AND :date2)";
   // expression attribute values for the request
+  console.log(localDateToServerDate(getFormState("from")));
+  console.log(getFormState("from"));
+
   let api_expressionAttributeValues = {
     ":SESMessageType": { S: getFormState("action") },
-    ":date1": { S: getFormState("from") },
-    ":date2": { S: getFormState("to") },
+    ":date1": { S: localDateToServerDate(getFormState("from")) },
+    ":date2": { S: localDateToServerDate(getFormState("to")) },
+    // ":date1": { S: getFormState("from") },
+    // ":date2": { S: getFormState("to") },
   };
   // set filter expression to blank
   let api_filterExpression = [];
