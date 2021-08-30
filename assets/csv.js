@@ -2,7 +2,6 @@ $(document).ready(function () {
   $.getScript("assets/env/root_env.js", function () {
     $.getScript("assets/env/csv_env.js", function () {
       let csv_data = [];
-      let csv_paginations = null;
       let csv_loaded_data_count = 0;
       let serial_no = 1;
       var csv_filteredTotalCount = 0;
@@ -72,8 +71,6 @@ $(document).ready(function () {
           },
           success: async function (data) {
             let items = [];
-            console.log(data);
-
             for (let [key, value] of Object.entries(data.Items)) {
               value["sn"] = serial_no;
               serial_no++;
@@ -184,7 +181,6 @@ $(document).ready(function () {
 
       async function csvExport() {
         csv_data = [];
-        csv_paginations = null;
         setProgressBarPercentage(0);
         serial_no = 1;
         setCsvLoadingMessage();

@@ -56,8 +56,6 @@ $(document).ready(function () {
             data = JSON.parse(data);
 
             datatable_data = datatable_data.concat(data.Items);
-            console.log(datatable_data);
-            console.log(data.Items);
             let paginations_lastEvaluatedKey = data.LastEvaluatedKey;
 
             let page_length =
@@ -251,12 +249,6 @@ $(document).ready(function () {
             success: function (data) {
               filteredTotalCount += data.Count;
               totalCount += data.ScannedCount;
-              console.log("data count : " + data.Count);
-              console.log("total Count : " + data.ScannedCount);
-              console.log(
-                "count update filtered total : " + filteredTotalCount
-              );
-              console.log("count update scanned total : " + totalCount);
               if (data.LastEvaluatedKey != undefined) {
                 api_data = JSON.parse(api_data);
                 api_data.ExclusiveStartKey = data.LastEvaluatedKey;
