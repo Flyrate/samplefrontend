@@ -4,7 +4,6 @@ $(document).ready(function () {
       // this paginations variable stores the exclusive start keys
       let paginations = {};
       let draw = 1;
-      let datatable_page_no = 1;
       let timeout = {};
       var filterStatus = false;
       var initial_data_request = true;
@@ -12,14 +11,23 @@ $(document).ready(function () {
       var page_no_requested_by_user = 1;
       var filteredTotalCount = 0;
       var totalCount = 0;
+      var xhr_datatables_count = null;
+      var datatable_data = [];
+      var get_more_data = false;
+      var get_more_exclusiveStartKey = null;
 
       // DataTable configureation
       var datatable_init_config = {
         pagingType: "simple",
         // pagingType: "listboxWithButtons",
         orderCellsTop: true,
-        fixedHeader: true,
+        language: {
+          info: "Showing _START_ to _END_ of Page _PAGE_",
+          infoFiltered: "",
+          infoEmpty: "No Records Found",
+        },
         serverSide: true,
+        stateSave: false,
         ajax: {
           type: "POST",
           dataType: "json",
@@ -29,15 +37,75 @@ $(document).ready(function () {
             return dataToSend();
           },
           beforeSend: function () {
+            // disable the next and prev buttons
+            disablePrevNextButtonDatable();
             // Here, manually add the loading message.
             $(`${datatable} > tbody`).html(
               '<tr class="odd">' +
-                '<td valign="top" colspan="8" class="dataTables_empty">Loading&hellip;</td>' +
+                '<td valign="top" colspan="' +
+                datatableColumns.length +
+                '" class="dataTables_empty">Loading&hellip;</td>' +
                 "</tr>"
             );
+            // add the loading msg for total count
+            if (xhr_datatables_count != null) {
+              xhr_datatables_count.abort();
+            }
           },
           dataFilter: function (data) {
             data = JSON.parse(data);
+
+            datatable_data = datatable_data.concat(data.Items);
+            console.log(datatable_data);
+            console.log(data.Items);
+            let paginations_lastEvaluatedKey = data.LastEvaluatedKey;
+
+            let page_length =
+              $(datatable).DataTable().page.len() <= 0
+                ? pageLength
+                : $(datatable).DataTable().page.len();
+            if (
+              data.Items.length < page_length &&
+              (data.LastEvaluatedKey != undefined ||
+                data.LastEvaluatedKey != null)
+            ) {
+              get_more_data = true;
+              get_more_exclusiveStartKey = data.LastEvaluatedKey;
+              $(datatable).DataTable().ajax.reload();
+              data.Items = datatable_data;
+            } else {
+              let end_index = 0;
+              if (datatable_data.length < page_length) {
+                end_index = datatable_data.length;
+              } else {
+                end_index = page_length;
+              }
+              let has_next_page = false;
+              if (
+                data.LastEvaluatedKey != undefined &&
+                data.LastEvaluatedKey != null
+              ) {
+                has_next_page = true;
+              }
+
+              data.Items = datatable_data.splice(0, end_index);
+              if (datatable_data.length > 0 || has_next_page) {
+                paginations_lastEvaluatedKey = (({
+                  SESMessageId,
+                  SESMessageType,
+                  SnsPublishTime,
+                }) => ({ SESMessageId, SESMessageType, SnsPublishTime }))(
+                  data.Items[data.Items.length - 1]
+                );
+              } else {
+                paginations_lastEvaluatedKey = undefined;
+              }
+
+              datatable_data = [];
+              get_more_data = false;
+              get_more_exclusiveStartKey = null;
+            }
+
             if (
               data.LastEvaluatedKey != undefined &&
               data.LastEvaluatedKey != null
@@ -45,25 +113,51 @@ $(document).ready(function () {
               //$(datatable).DataTable().page.info().page this gives the page number before clicking the next button
               if (
                 $(datatable).DataTable().page.info().page ==
-                page_no_requested_by_user - 1
+                  page_no_requested_by_user - 1 &&
+                paginations_lastEvaluatedKey != undefined &&
+                paginations_lastEvaluatedKey != null
               ) {
-                paginations[$(datatable).DataTable().page.info().page + 2] =
-                  data.LastEvaluatedKey;
+                paginations[page_no_requested_by_user + 1] =
+                  paginations_lastEvaluatedKey;
               }
             }
-            // (() => {
-            //   setTimeout(function () {
-            //     updateDatatableCount();
-            //   }, 100);
-            // })();
-            updateDatatableCount();
+
+            $(datatable)
+              .DataTable()
+              .page(page_no_requested_by_user - 1);
+
+            let total_records = data.ScannedCount;
+            let filtered_records = data.Count;
+            if (
+              paginations_lastEvaluatedKey != undefined &&
+              paginations_lastEvaluatedKey != null
+            ) {
+              total_records *= 2;
+              filtered_records *= 2;
+              total_records +=
+                ($(datatable).DataTable().page.info().page + 2) *
+                $(datatable).DataTable().page.len();
+              filtered_records +=
+                ($(datatable).DataTable().page.info().page + 2) *
+                $(datatable).DataTable().page.len();
+            } else {
+              total_records +=
+                $(datatable).DataTable().page.info().page *
+                $(datatable).DataTable().page.len();
+              filtered_records +=
+                $(datatable).DataTable().page.info().page *
+                $(datatable).DataTable().page.len();
+            }
 
             data = {
               draw: draw,
-              recordsTotal: totalCount,
-              recordsFiltered: filteredTotalCount,
+              recordsTotal: total_records,
+              recordsFiltered: filtered_records,
               data: data.Items,
             };
+            if (!get_more_data) {
+              updateCount();
+            }
 
             draw++;
 
@@ -86,65 +180,104 @@ $(document).ready(function () {
           );
           return nRow;
         },
-        drawCallback: function () {
+        drawCallback: function (settings) {
           $(".paginate_button.previous:not(.disabled) a").on(
             "click",
             function () {
               page_no_requested_by_user =
-                $(datatable).DataTable().page.info().page > 0
-                  ? $(datatable).DataTable().page.info().page - 1
-                  : 0;
+                table.page.info().page > 0 ? table.page.info().page : 0;
             }
           );
           $(".paginate_button.next:not(.disabled) a").on("click", function () {
-            console.log("updated page no req by user");
-            console.log($(datatable).DataTable().page.info().page);
-            page_no_requested_by_user =
-              $(datatable).DataTable().page.info().page + 1;
+            page_no_requested_by_user = table.page.info().page + 2;
+            console.log(table.page.info().page);
+
+            console.log(page_no_requested_by_user);
           });
         },
       };
-      $("#search_form").submit(async function (event) {
+
+      function disablePrevNextButtonDatable() {
+        $(".paginate_button.previous:not(.disabled)").addClass("disabled");
+        $(".paginate_button.next:not(.disabled)").addClass("disabled");
+      }
+      $("#search_form").submit(function (event) {
+        clearFilter();
+        setFormState();
         $("#show_requested_data_div").show("slow");
         if (initial_data_request || table == null) {
+          paginations = {};
           table = $(datatable).DataTable(datatable_init_config);
           initial_data_request = false;
         } else {
-          console.time("load db data time");
-          await table.draw();
-          console.timeEnd("load db data time");
+          paginations = {};
+          page_no_requested_by_user = 1;
+          table.clear();
+          table.page(0).draw();
         }
         event.preventDefault();
       });
 
-      function updateDatatableCount() {
+      function updateCountRecords(is_loading = false, is_filtered = false) {
+        var table_count_div = $("#table_count_display");
+        var msg = `<div class="fa-1x"><i class="fas fa-spinner fa-pulse"></i></div>`;
+        if (!is_loading) {
+          msg = `<div class="col-md-3"><label class="h6 text-break">Total Data: <b>${totalCount}</b></label></div>`;
+          if (is_filtered) {
+            msg += `<div class="col-md-8"><label class="h6 text-break">Data Filtered out of Total Data: <b>${filteredTotalCount}</b></label></div>`;
+          }
+        }
+        table_count_div.html(msg);
+      }
+
+      function updateCount() {
         filteredTotalCount = 0;
         totalCount = 0;
         var api_data = dataToSend(true);
-
-        ajaxCallToCount(api_data);
-      }
-      function ajaxCallToCount(api_data) {
-        $.ajax({
-          type: "POST",
-          async: false, // set async false to wait for previous response
-          url: api_url,
-          dataType: "json",
-          contentType: "application/json; charset=utf",
-          data: api_data,
-          success: function (data) {
-            filteredTotalCount += data.Count;
-            totalCount += data.ScannedCount;
-            if (data.LastEvaluatedKey != undefined) {
-              api_data = JSON.parse(api_data);
-              api_data.ExclusiveStartKey = data.LastEvaluatedKey;
-              ajaxCallToCount(JSON.stringify(api_data));
-            }
-          },
+        updateCountRecords(true, false);
+        ajaxCallToCount(api_data, () => {
+          updateCountRecords(false, getFilterStatusAndFilter().filterStatus);
         });
       }
-
-      function dataToSend(count = false) {
+      async function ajaxCallToCount(api_data, functionToRunAfterCount) {
+        var ajax_func = () => {
+          xhr_datatables_count = $.ajax({
+            type: "POST",
+            async: true, // set async false to wait for previous response
+            url: api_url,
+            dataType: "json",
+            contentType: "application/json; charset=utf",
+            data: api_data,
+            success: function (data) {
+              filteredTotalCount += data.Count;
+              totalCount += data.ScannedCount;
+              console.log("data count : " + data.Count);
+              console.log("total Count : " + data.ScannedCount);
+              console.log(
+                "count update filtered total : " + filteredTotalCount
+              );
+              console.log("count update scanned total : " + totalCount);
+              if (data.LastEvaluatedKey != undefined) {
+                api_data = JSON.parse(api_data);
+                api_data.ExclusiveStartKey = data.LastEvaluatedKey;
+                ajaxCallToCount(
+                  JSON.stringify(api_data),
+                  functionToRunAfterCount
+                );
+              } else {
+                functionToRunAfterCount();
+              }
+            },
+          });
+        };
+        await ajax_func();
+      }
+      function clearFilter() {
+        $("#filterbySubject").val("");
+        $("#filterbySender").val("");
+        $("#filterbyDestination").val("");
+      }
+      function getFilterStatusAndFilter() {
         const filterbySubject = $("#filterbySubject").val().trim();
         const filterbySender = $("#filterbySender").val().trim();
         const filterbyDestination = $("#filterbyDestination").val().trim();
@@ -166,10 +299,11 @@ $(document).ready(function () {
           filterStatus = true;
           filter["SESDestinationAddress"] = filterbyDestination;
         }
+        return { filterStatus: filterStatus, filter: filter };
+      }
 
+      function getExclusiveStartKey() {
         let exclusiveStartKey = undefined;
-        console.log(paginations);
-        console.log(page_no_requested_by_user);
         if (paginations[page_no_requested_by_user] != undefined) {
           try {
             exclusiveStartKey = paginations[page_no_requested_by_user];
@@ -177,9 +311,30 @@ $(document).ready(function () {
             exclusiveStartKey = undefined;
           }
         }
+        return exclusiveStartKey;
+      }
+
+      function dataToSend(count = false) {
+        const { filterStatus, filter } = getFilterStatusAndFilter();
+        let limit = $(datatable).DataTable().page.len();
+        let exclusiveStartKey = getExclusiveStartKey();
+        if (get_more_data) {
+          if (get_more_exclusiveStartKey != null) {
+            exclusiveStartKey = get_more_exclusiveStartKey;
+            limit = undefined;
+          } else {
+            exclusiveStartKey = getExclusiveStartKey();
+            limit = $(datatable).DataTable().page.len();
+          }
+        } else {
+          if (count) {
+            exclusiveStartKey = undefined;
+          }
+        }
+
         return JSON.stringify(
           apiDataObject(
-            $(datatable).DataTable().page.len(),
+            limit,
             filterStatus ? filter : undefined,
             exclusiveStartKey,
             count ? count : undefined
@@ -193,12 +348,12 @@ $(document).ready(function () {
         $(`${datatable} thead tr`).clone(true).appendTo(`${datatable} thead`);
         $(`${datatable} thead tr:eq(1) th`).each(function (i) {
           var id = "filterbySubject";
-          if (i == 3) {
+          if (i == 4) {
             id = "filterbySender";
-          } else if (i == 4) {
+          } else if (i == 5) {
             id = "filterbyDestination";
           }
-          if (i == 2 || i == 3 || i == 4) {
+          if (i == 3 || i == 4 || i == 5) {
             var title = $(this).text();
             $(this).html(
               '<input id="' +
@@ -218,10 +373,20 @@ $(document).ready(function () {
               timeout[i] = setTimeout(function () {
                 if (table.column(i).search() !== this.value) {
                   filterStatus = true;
+                  paginations = {};
+                  if (xhr_datatables_count != null) {
+                    xhr_datatables_count.abort();
+                  }
+                  page_no_requested_by_user = 1;
                   table.clear();
-                  table.ajax.reload();
+                  table.page(0).draw();
                 }
               }, 1000);
+              setFilterState({
+                Subject: $("#filterbySubject").val().trim(),
+                From: $("#filterbySender").val().trim(),
+                To: $("#filterbyDestination").val().trim(),
+              });
             });
           } else {
             $(this).html("");

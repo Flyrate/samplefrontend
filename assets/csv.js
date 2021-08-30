@@ -3,13 +3,17 @@ $(document).ready(function () {
     $.getScript("assets/env/csv_env.js", function () {
       let csv_data = [];
       let csv_paginations = null;
-
-      let pg = 1;
+      let csv_loaded_data_count = 0;
       let serial_no = 1;
+      var csv_filteredTotalCount = 0;
+      var csv_totalCount = 0;
+      let csv_export_error_msg =
+        "Please refresh the page and try again. If the task is not completed after few retries contact the Genese Solutions.";
 
       var filterStatus = false;
       //   the value of this let will be the latest ajax call made
       let xhr = null;
+      let xhr_count = null;
 
       $("#csv_export_btn").on("click", () => {
         $("#csv_export_btn").hide("fast", "swing");
@@ -22,73 +26,85 @@ $(document).ready(function () {
         cancelCSVExport();
       });
 
-      let data = () => {
-        if (
-          $("#filterbySubject").val().trim() == "" &&
-          $("#filterbySender").val().trim() == "" &&
-          $("#filterbyDestination").val().trim() == ""
-        ) {
-          filterStatus = false;
-        } else {
-          filterStatus = "True";
-        }
-        var data = {
-          action: $("#action :selected").val(),
-          date1: $("#from").val(),
-          date2: $("#to").val(),
-          filterStatus: filterStatus,
-          Numberofdata: csv_length,
-        };
-        if ($("#filterbySubject").val().trim() != "") {
-          data["filterbySubject"] = $("#filterbySubject").val().trim();
+      function data(to_count = false) {
+        const filterbySubject = $("#filterbySubject").val().trim();
+        const filterbySender = $("#filterbySender").val().trim();
+        const filterbyDestination = $("#filterbyDestination").val().trim();
+
+        var filter = {};
+        filterStatus = false;
+
+        if (filterbySubject != "") {
+          filterStatus = true;
+          filter["Subject"] = filterbySubject;
         }
 
-        if ($("#filterbySender").val().trim() != "") {
-          data["filterbySender"] = $("#filterbySender").val().trim();
+        if (filterbySender != "") {
+          filterStatus = true;
+          filter["SESSenderAddress"] = filterbySender;
         }
 
-        if ($("#filterbyDestination").val().trim() != "") {
-          data["filterbyDestination"] = $("#filterbyDestination").val().trim();
+        if (filterbyDestination != "") {
+          filterStatus = true;
+          filter["SESDestinationAddress"] = filterbyDestination;
         }
-        return data;
-      };
+
+        let exclusiveStartKey = undefined;
+
+        const page_length = undefined;
+        return apiDataObject(
+          page_length,
+          filterStatus ? filter : undefined,
+          exclusiveStartKey,
+          to_count
+        );
+      }
 
       function apiCall(api_data_object) {
         xhr = $.ajax({
           type: "POST",
           dataType: "json",
           contentType: "application/json",
-          url: "https://ulo6w8cpv2.execute-api.us-east-1.amazonaws.com/test/test",
+          url: api_url,
           data: JSON.stringify(api_data_object),
           complete: function (data) {
             // console.log(data);
           },
           success: async function (data) {
-            console.log(pg);
-            console.log(data);
             let items = [];
+            console.log(data);
+
             for (let [key, value] of Object.entries(data.Items)) {
               value["sn"] = serial_no;
               serial_no++;
               items.push(value);
             }
             csv_data = csv_data.concat(items);
-            csv_paginations = data.Paginations;
+            csv_loaded_data_count += data.Count;
             if (data.LastEvaluatedKey != undefined) {
-              api_data_object["LastEvaluatedKey"] = data.LastEvaluatedKey;
+              api_data_object["ExclusiveStartKey"] = data.LastEvaluatedKey;
               setProgressBarPercentage(
-                Math.round((pg / Object.keys(csv_paginations).length) * 100)
+                Math.round((csv_loaded_data_count / csv_totalCount) * 100),
+                false
               );
-              pg++;
+              // console.log(csv_loaded_data_count);
+              // console.log(csv_totalCount);
+
               apiCall(api_data_object);
             } else {
-              setProgressBarPercentage(100);
+              setProgressBarPercentage(100, false);
               await sleep(1000);
-              const r = confirm(
-                "CSV file ready to downlod. Please confirm to download it."
+              let filename = Object.values(
+                api_data_object.ExpressionAttributeValues
+              )
+                .map((obj) => obj.S)
+                .join("__");
+              const r = window.prompt(
+                "Enter the file name (Suggested File name is already entered) : ",
+                filename
               );
               if (r) {
-                exportArrayToCSV();
+                exportArrayToCSV(filename);
               } else {
                 alert("Download Cancled By User");
                 cancelCSVExport();
@@ -97,9 +113,7 @@ $(document).ready(function () {
           },
           error: function (xhr, ajaxOptions, thrownError) {
             if (thrownError != "abort") {
-              alert(
-                "Please refresh the page and try again. If the task is not completed after few retries contact the Genese Solutions."
-              );
+              alert(csv_export_error_msg);
               cancelCSVExport();
             }
             return false;
@@ -116,9 +130,12 @@ $(document).ready(function () {
         if (xhr != null) {
           xhr.abort();
         }
+        if (xhr_count != null) {
+          xhr_count.abort();
+        }
       }
 
-      function exportArrayToCSV() {
+      function exportArrayToCSV(filename = "Mailing Data") {
         let csvContent =
           "data:text/csv;charset=utf-8," + csv_data_header.join(",") + "\r\n";
         // "SN", "Send Date and Time", "From", "To", "Message Type", "Source IP", "SMTP Response"]
@@ -131,16 +148,17 @@ $(document).ready(function () {
         var encodedUri = encodeURI(csvContent);
         var link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "my_data.csv");
+
+        link.setAttribute("download", filename + ".csv");
         document.body.appendChild(link); // Required for FF
 
         link.click();
         cancelCSVExport();
       }
 
-      function setCsvLoadingMessage(data) {
+      function setCsvLoadingMessage() {
         let msg = "";
-        for (const [key, value] of Object.entries(data)) {
+        for (const [key, value] of Object.entries(getAllFormState())) {
           const user_key = jsonKeyToUserMessage(key);
           //   msg += `${user_key} = ${value}<br>`;
           if (user_key != undefined) {
@@ -148,7 +166,7 @@ $(document).ready(function () {
           }
         }
         var no_of_filters = 0;
-        for (const [key, value] of Object.entries(data)) {
+        for (const [key, value] of Object.entries(getAllFilterState())) {
           const user_key = jsonKeyToFilterMessage(key);
           //   msg += `${user_key} = ${value}<br>`;
           if (user_key != undefined) {
@@ -162,43 +180,92 @@ $(document).ready(function () {
 
         $("#csv_processing_message").html(msg);
         $("#csv_downloading_div").show("slow", "swing");
-        console.log(msg);
       }
 
       async function csvExport() {
         csv_data = [];
         csv_paginations = null;
         setProgressBarPercentage(0);
-        pg = 1;
         serial_no = 1;
-        setCsvLoadingMessage(data());
-        return await apiCall(data());
+        setCsvLoadingMessage();
+        csv_filteredTotalCount = 0;
+        csv_totalCount = 0;
+        apiCallCountAndCSV(data(true), data());
+      }
+
+      function apiCallCountAndCSV(api_count_data, api_csv_data) {
+        setProgressBarPercentage();
+        (async () => {
+          let promise = new Promise((res, rej) => {
+            xhr_count = $.ajax({
+              type: "POST",
+              async: true, // set async false to wait for previous response
+              url: api_url,
+              dataType: "json",
+              contentType: "application/json; charset=utf",
+              data: JSON.stringify(api_count_data),
+              success: function (data) {
+                csv_filteredTotalCount += data.Count;
+                csv_totalCount += data.ScannedCount;
+                if (data.LastEvaluatedKey != undefined) {
+                  api_count_data.ExclusiveStartKey = data.LastEvaluatedKey;
+                  apiCallCountAndCSV(api_count_data, api_csv_data);
+                } else {
+                  apiCall(api_csv_data);
+                  setProgressBarPercentage(5, false);
+                }
+              },
+              error: function (xhr, ajaxOptions, thrownError) {
+                if (thrownError != "abort") {
+                  alert(csv_export_error_msg);
+                  cancelCSVExport();
+                }
+                return false;
+              },
+            });
+          });
+          await promise;
+        })();
       }
 
       function jsonKeyToUserMessage(jsonKey) {
-        if (jsonKey == "action") {
+        if (jsonKey.toUpperCase() == "action".toUpperCase()) {
           return "Type";
-        } else if (jsonKey == "date1") {
-          return "Date From";
-        } else if (jsonKey == "date2") {
-          return "Date To";
+        } else if (jsonKey.toUpperCase() == "from".toUpperCase()) {
+          return "From Date";
+        } else if (jsonKey.toUpperCase() == "to".toUpperCase()) {
+          return "To Date";
         }
       }
       function jsonKeyToFilterMessage(jsonKey) {
-        if (jsonKey == "filterbySubject") {
+        if (jsonKey.toUpperCase() == "Subject".toUpperCase()) {
           return "Subject";
-        } else if (jsonKey == "filterbySender") {
+        } else if (jsonKey.toUpperCase() == "From".toUpperCase()) {
           return "From";
-        } else if (jsonKey == "filterbyDestination") {
+        } else if (jsonKey.toUpperCase() == "To".toUpperCase()) {
           return "To";
         }
       }
-      function setProgressBarPercentage(progressBarPercentage) {
+      function setProgressBarPercentage(
+        progressBarPercentage = 100,
+        loading = true
+      ) {
         const progressBar = $("#csv_progress_bar");
-        progressBar.text(progressBarPercentage + "%");
-        progressBar
-          .attr("aria-valuenow", progressBarPercentage)
-          .css("width", progressBarPercentage + "%");
+        if (loading) {
+          progressBar.text("Preparing to Export ...");
+          progressBar.removeClass("bg-success");
+          progressBar.addClass("bg-warning");
+          progressBar
+            .attr("aria-valuenow", progressBarPercentage)
+            .css("width", progressBarPercentage + "%");
+        } else {
+          progressBar.text(progressBarPercentage + "%");
+          progressBar.removeClass("bg-warning");
+          progressBar.addClass("bg-success");
+          progressBar
+            .attr("aria-valuenow", progressBarPercentage)
+            .css("width", progressBarPercentage + "%");
+        }
       }
 
       function sleep(ms) {

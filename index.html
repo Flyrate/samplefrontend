@@ -24,6 +24,12 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/v/bs5/jszip-2.5.0/dt-1.10.25/af-2.3.7/b-1.7.1/b-colvis-1.7.1/b-html5-1.7.1/b-print-1.7.1/cr-1.5.4/date-1.1.1/fc-3.3.3/fh-3.1.9/kt-2.6.2/r-2.2.9/rg-1.1.3/rr-1.2.8/sc-2.0.4/sb-1.1.0/sp-1.3.0/sl-1.3.3/datatables.min.js"></script> -->
 
+    <!-- fontawesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js" integrity="sha512-Tn2m0TIpgVyTzzvmxLNuqbSJH3JP8jm+Cy3hvHrW7ndTDcJ1w5mBiksqDBb8GpE2ksktFvDB/ykZ0mDpsZj20w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- custom js for this application -->
     <script src="assets/datatables-custom-pagination.js"></script>
 
     <script src="assets/datatables_custom.js"></script>
@@ -81,7 +87,7 @@
                     <div class="
                 progress-bar progress-bar-striped progress-bar-animated
                 bg-success
-              " role="progressbar" style="width: 0%" aria-valuenow="25 " aria-valuemin="0 " aria-valuemax="100 " id="csv_progress_bar ">
+              " role="progressbar" style="width: 0%" aria-valuenow="25 " aria-valuemin="0 " aria-valuemax="100 " id="csv_progress_bar">
                         25%
                     </div>
                 </div>
@@ -89,17 +95,28 @@
                 <div class="row g-3" id="csv_processing_message"></div>
             </div>
             <br />
-
+            <hr />
+            <h5>Table Count</h5>
+            <div class="row g-3" id="table_count_display">
+                <div class="fa-1x"><i class="fas fa-spinner fa-pulse"></i></div>
+            </div>
             <table class="table table-bordered w-100" id="datatable">
                 <thead>
                     <th>S.N</th>
                     <th>Send Date and Time</th>
+                    <th>Time</th>
                     <th>Subject</th>
                     <th>From</th>
                     <th>To</th>
-                    <th>Message Type</th>
-                    <th>Source IP</th>
-                    <th>SMTP Response</th>
+                    <th>
+                        Message<br /> Type
+                    </th>
+                    <th>
+                        Source<br /> IP
+                    </th>
+                    <th>
+                        SMTP<br /> Response
+                    </th>
                 </thead>
                 <tbody></tbody>
             </table>
