@@ -17,18 +17,37 @@ const csv_length = 1000;
 
 // set the reutrn of the function to show which data to put under which header above
 function getRowToExportFromExistingRow(row) {
-  return [
-    // for the header on the line no 4 use the data of line 22
-    row.sn,
-    // for the header on the line no 5 use the data of line no 24 and so on
-    row.SESMessageId.S,
-    serverDateToLocalDate(row.SnsPublishTime.S),
-    row.Time.S,
-    row.Subject.S,
-    row.SESSenderAddress.S,
-    row.SESDestinationAddress.S,
-    row.SESMessageType.S,
-    row.SourceIP.S,
-    row.SMTPresponse.S,
-  ];
+  let val = ["", "", "", "", "", "", "", "", "", ""];
+  try {
+    val = [
+      // for the header on the line no 4 use the data of line 22
+      row.sn,
+      // for the header on the line no 5 use the data of line no 24 and so on
+      row.SESMessageId.S,
+      serverDateToLocalDate(row.SnsPublishTime.S),
+      row.Time.S,
+      row.Subject.S,
+      row.SESSenderAddress.S,
+      row.SESDestinationAddress.S,
+      row.SESMessageType.S,
+      row.SourceIP.S,
+      row.SMTPresponse.S,
+    ];
+  } catch (err) {
+    val = [
+      // for the header on the line no 4 use the data of line 22
+      row.sn,
+      // for the header on the line no 5 use the data of line no 24 and so on
+      row.SESMessageId.S,
+      serverDateToLocalDate(row.SnsPublishTime.S),
+      "",
+      row.Subject.S,
+      row.SESSenderAddress.S,
+      row.SESDestinationAddress.S,
+      row.SESMessageType.S,
+      row.SourceIP.S,
+      row.SMTPresponse.S,
+    ];
+  }
+  return val;
 }

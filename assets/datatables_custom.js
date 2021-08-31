@@ -9,7 +9,7 @@ $(document).ready(function () {
   var page_no_requested_by_user = 1;
   var filteredTotalCount = 0;
   var totalCount = 0;
-  var xhr_datatables_count = null;
+  var xhr_datatables_count = [];
   var datatable_data = [];
   var get_more_data = false;
   var get_more_exclusiveStartKey = null;
@@ -45,10 +45,7 @@ $(document).ready(function () {
             '" class="dataTables_empty">Loading&hellip;</td>' +
             "</tr>"
         );
-        // add the loading msg for total count
-        if (xhr_datatables_count != null) {
-          xhr_datatables_count.abort();
-        }
+        abortCounting();
       },
       dataFilter: function (data) {
         data = JSON.parse(data);
@@ -143,6 +140,8 @@ $(document).ready(function () {
             $(datatable).DataTable().page.len();
         }
 
+        // format data items to return empty string for data.Items.*.Time if Time key is not returned by server
+        data.Items = formatDataItems(data.Items);
         data = {
           draw: draw,
           recordsTotal: total_records,
@@ -183,6 +182,16 @@ $(document).ready(function () {
     },
   };
 
+  function formatDataItems(data_items) {
+    data_items.map((val) => {
+      if (!("Time" in val && "time" in val)) {
+        val.Time = { S: "" };
+        return val;
+      }
+    });
+    return data_items;
+  }
+
   function disablePrevNextButtonDatable() {
     $(".paginate_button.previous:not(.disabled)").addClass("disabled");
     $(".paginate_button.next:not(.disabled)").addClass("disabled");
@@ -207,11 +216,16 @@ $(document).ready(function () {
   function updateCountRecords(is_loading = false, is_filtered = false) {
     var table_count_div = $("#table_count_display");
     var msg = `<div class="fa-1x"><i class="fas fa-spinner fa-pulse"></i></div>`;
+
     if (!is_loading) {
       msg = `<div class="col-md-3"><label class="h6 text-break">Total Data: <b>${totalCount}</b></label></div>`;
       if (is_filtered) {
         msg += `<div class="col-md-8"><label class="h6 text-break">Data Filtered out of Total Data: <b>${filteredTotalCount}</b></label></div>`;
       }
+    }
+    if (Number.isNaN(totalCount) || Number.isNaN(filteredTotalCount)) {
+      var msg = `<div class="fa-1x"><i class="fas fa-spinner fa-pulse"></i> Taking longer than usual ... </div>`;
+      updateCount();
     }
     table_count_div.html(msg);
   }
@@ -221,13 +235,17 @@ $(document).ready(function () {
     totalCount = 0;
     var api_data = dataToSend(true);
     updateCountRecords(true, false);
-    ajaxCallToCount(api_data, () => {
+    ajaxCallToCount(api_data, { filteredTotalCount: 0, totalCount: 0 }, () => {
       updateCountRecords(false, getFilterStatusAndFilter().filterStatus);
     });
   }
-  async function ajaxCallToCount(api_data, functionToRunAfterCount) {
+  async function ajaxCallToCount(
+    api_data,
+    initialCount,
+    functionToRunAfterCount
+  ) {
     var ajax_func = () => {
-      xhr_datatables_count = $.ajax({
+      const temp = $.ajax({
         type: "POST",
         async: true, // set async false to wait for previous response
         url: api_url,
@@ -235,24 +253,33 @@ $(document).ready(function () {
         contentType: "application/json; charset=utf",
         data: api_data,
         success: function (data) {
-          filteredTotalCount += data.Count;
-          totalCount += data.ScannedCount;
+          initialCount.filteredTotalCount += data.Count;
+          initialCount.totalCount += data.ScannedCount;
           if (data.LastEvaluatedKey != undefined) {
             api_data = JSON.parse(api_data);
             api_data.ExclusiveStartKey = data.LastEvaluatedKey;
-            ajaxCallToCount(JSON.stringify(api_data), functionToRunAfterCount);
+            ajaxCallToCount(
+              JSON.stringify(api_data),
+              initialCount,
+              functionToRunAfterCount
+            );
           } else {
+            filteredTotalCount = initialCount.filteredTotalCount;
+            totalCount = initialCount.totalCount;
             functionToRunAfterCount();
           }
         },
       });
+      xhr_datatables_count.push(temp);
     };
+
     await ajax_func();
   }
   function clearFilter() {
     $("#filterbySubject").val("");
     $("#filterbySender").val("");
     $("#filterbyDestination").val("");
+    clearFilterState();
   }
   function getFilterStatusAndFilter() {
     const filterbySubject = $("#filterbySubject").val().trim();
@@ -318,6 +345,14 @@ $(document).ready(function () {
       )
     );
   }
+  function abortCounting() {
+    // add the loading msg for total count
+    if (xhr_datatables_count.length > 0) {
+      xhr_datatables_count.forEach((xhr_datatable) => {
+        xhr_datatable.abort();
+      });
+    }
+  }
 
   // call this function to enable header search on 3rd, 4th and 5th column.
   function headerSearch() {
@@ -346,24 +381,19 @@ $(document).ready(function () {
           // if it has been less than <MILLISECONDS>
           clearTimeout(timeout[i]);
 
+          setFilterState(getFilterStatusAndFilter().filter);
+
           // Make a new timeout set to go off in 1000ms (1 second)
           timeout[i] = setTimeout(function () {
             if (table.column(i).search() !== this.value) {
               filterStatus = true;
               paginations = {};
-              if (xhr_datatables_count != null) {
-                xhr_datatables_count.abort();
-              }
+              abortCounting();
               page_no_requested_by_user = 1;
               table.clear();
               table.page(0).draw();
             }
           }, 1000);
-          setFilterState({
-            Subject: $("#filterbySubject").val().trim(),
-            From: $("#filterbySender").val().trim(),
-            To: $("#filterbyDestination").val().trim(),
-          });
         });
       } else {
         $(this).html("");

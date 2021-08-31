@@ -6,6 +6,8 @@ var api_indexName = "SESMessageType-Index";
 var filterStatus = false;
 var toFilter = true;
 var api_projectionExpression_onCount = "Subject";
+
+
 // this file contains the root environment that is required for both the csv and datatables
 
 // maintain the state of the form
@@ -33,7 +35,14 @@ function setFilterState(filterObject) {
       filter_state[key] = value;
     }
   }
+  if (Object.keys(filterObject).length == 0) {
+    clearFilterState();
+  }
 }
+function clearFilterState() {
+  filter_state = {};
+}
+
 function getAllFilterState() {
   return filter_state;
 }
@@ -89,8 +98,6 @@ function apiDataObject(
   let api_keyConditionExpression =
     "(SESMessageType = :SESMessageType AND SnsPublishTime BETWEEN :date1 AND :date2)";
   // expression attribute values for the request
-  console.log(localDateToServerDate(getFormState("from")));
-  console.log(getFormState("from"));
 
   let api_expressionAttributeValues = {
     ":SESMessageType": { S: getFormState("action") },
