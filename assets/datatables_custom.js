@@ -119,6 +119,10 @@ $(document).ready(function () {
 
         let total_records = data.ScannedCount;
         let filtered_records = data.Count;
+        if (getFilterStatusAndFilter().filterStatus) {
+          // total_records = data.Items.length;
+          filtered_records = data.Items.length;
+        }
         if (
           paginations_lastEvaluatedKey != undefined &&
           paginations_lastEvaluatedKey != null
@@ -139,6 +143,8 @@ $(document).ready(function () {
             $(datatable).DataTable().page.info().page *
             $(datatable).DataTable().page.len();
         }
+        console.log(total_records);
+        console.log(filtered_records);
 
         // format data items to return empty string for data.Items.*.Time if Time key is not returned by server
         data.Items = formatDataItems(data.Items);
