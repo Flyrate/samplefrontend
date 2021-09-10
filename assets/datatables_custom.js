@@ -143,8 +143,6 @@ $(document).ready(function () {
             $(datatable).DataTable().page.info().page *
             $(datatable).DataTable().page.len();
         }
-        console.log(total_records);
-        console.log(filtered_records);
 
         // format data items to return empty string for data.Items.*.Time if Time key is not returned by server
         data.Items = formatDataItems(data.Items);
@@ -185,6 +183,13 @@ $(document).ready(function () {
       $(".paginate_button.next:not(.disabled) a").on("click", function () {
         page_no_requested_by_user = table.page.info().page + 2;
       });
+
+      try{
+        $(datatable).DataTable().columns.adjust();
+      }
+      catch(err){
+        console.log(err)
+      }
     },
   };
 
@@ -210,13 +215,25 @@ $(document).ready(function () {
       paginations = {};
       table = $(datatable).DataTable(datatable_init_config);
       initial_data_request = false;
+      
     } else {
       paginations = {};
       page_no_requested_by_user = 1;
       table.clear();
       table.page(0).draw();
     }
+    $(datatable).DataTable()
+      .columns.adjust();
+    $(datatable).DataTable()
+       .columns.adjust()
+       .fixedColumns().relayout();
+       $(datatable).DataTable()
+      .scroller.measure();
+      $(datatable).DataTable()
+      .columns.adjust()
+      .responsive.recalc();
     event.preventDefault();
+     
   });
 
   function updateCountRecords(is_loading = false, is_filtered = false) {

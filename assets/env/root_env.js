@@ -1,12 +1,18 @@
-// variables required for making the api_call for the api_call
+// variables required for making the api_call 
+// old api
 var api_url = "https://r0sh9ji2ge.execute-api.us-east-1.amazonaws.com/test";
-var api_tableName = "SMTPDeliveryNotifications";
+// var api_url =
+//   "https://dyxuixpp0d.execute-api.ap-south-1.amazonaws.com/test/getinformation";
+var api_tableName = {
+  delivery: "SMTPDeliveryNotifications",
+  complaint: "SMTPComplaintNotifications",
+  bounce: "SMTPBounceNotifications",
+};
 var api_consistentRead = false;
 var api_indexName = "SESMessageType-Index";
 var filterStatus = false;
 var toFilter = true;
-var api_projectionExpression_onCount = "Subject";
-
+var api_projectionExpression_onCount = "SESMessageType";
 
 // this file contains the root environment that is required for both the csv and datatables
 
@@ -118,7 +124,7 @@ function apiDataObject(
   }
   // basic data to pass to the api
   let data = {
-    TableName: api_tableName,
+    TableName: api_tableName[getFormState("action").toLowerCase()],
     ConsistentRead: api_consistentRead,
     IndexName: api_indexName,
     KeyConditionExpression: api_keyConditionExpression,
