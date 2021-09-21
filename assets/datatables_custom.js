@@ -195,11 +195,11 @@ $(document).ready(function () {
 
   function formatDataItems(data_items) {
     data_items.map((val) => {
-      if (!("Time" in val && "time" in val)) {
+      if (!("Time" in val)) {
         val.Time = { S: "" };
         
       }
-      if (!("Subject" in val && "subject" in val)) {
+      if (!("Subject" in val)) {
         val.Subject = { S: "" };        
       }
       if (!("SourceIP" in val)) {
