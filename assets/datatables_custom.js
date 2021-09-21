@@ -197,8 +197,24 @@ $(document).ready(function () {
     data_items.map((val) => {
       if (!("Time" in val && "time" in val)) {
         val.Time = { S: "" };
-        return val;
+        
       }
+      if (!("Subject" in val && "subject" in val)) {
+        val.Subject = { S: "" };        
+      }
+      if (!("SourceIP" in val)) {
+        val.SourceIP = { S: "" };        
+      }
+      if (!("SESSenderAddress" in val)) {
+        val.SESSenderAddress = { S: "" };        
+      }
+      if (!("SESDestinationAddress" in val)) {
+        val.SESDestinationAddress = { S: "" };        
+      }
+      if (!("SMTPresponse" in val)) {
+        val.SMTPresponse = { S: "" };        
+      }
+      return val;
     });
     return data_items;
   }

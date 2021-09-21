@@ -1,8 +1,8 @@
 // variables required for making the api_call 
 // old api
 var api_url = "https://r0sh9ji2ge.execute-api.us-east-1.amazonaws.com/test";
-// var api_url =
-//   "https://dyxuixpp0d.execute-api.ap-south-1.amazonaws.com/test/getinformation";
+var api_url =
+  "https://dyxuixpp0d.execute-api.ap-south-1.amazonaws.com/test/getinformation";
 var api_tableName = {
   delivery: "SMTPDeliveryNotifications",
   complaint: "SMTPComplaintNotifications",

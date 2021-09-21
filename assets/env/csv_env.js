@@ -18,6 +18,25 @@ const csv_length = 1000;
 // set the reutrn of the function to show which data to put under which header above
 function getRowToExportFromExistingRow(row) {
   let val = ["", "", "", "", "", "", "", "", "", ""];
+  if (!("Time" in row && "time" in row)) {
+    row.Time = { S: "" };
+    
+  }
+  if (!("Subject" in row && "subject" in row)) {
+    row.Subject = { S: "" };        
+  }
+  if (!("SourceIP" in row)) {
+    row.SourceIP = { S: "" };        
+  }
+  if (!("SESSenderAddress" in row)) {
+    row.SESSenderAddress = { S: "" };        
+  }
+  if (!("SESDestinationAddress" in row)) {
+    row.SESDestinationAddress = { S: "" };        
+  }
+  if (!("SMTPresponse" in row)) {
+    row.SMTPresponse = { S: "" };        
+  }
   try {
     val = [
       // for the header on the line no 4 use the data of line 22
