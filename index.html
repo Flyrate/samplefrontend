@@ -8,6 +8,8 @@
     <title>Mass Mail Marketing Summary</title>
     <link rel="stylesheet" href="assets/bootstrap-5.1.0/css/bootstrap.min.css" />
     <link rel="stylesheet" href="assets/DataTables/datatables.min.css" />
+    <link rel="stylesheet" href="assets/login.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
     <!-- jquery -->
     <script src="assets/jquery-3.6.0.js"></script>
     <!-- moment for easier date time management -->
@@ -16,6 +18,7 @@
     <script src="assets/bootstrap-5.1.0/js/bootstrap.min.js"></script>
     <!-- datatables -->
     <script src="assets/DataTables/datatables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
     <!-- fontawesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer"
@@ -23,16 +26,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js" integrity="sha512-Tn2m0TIpgVyTzzvmxLNuqbSJH3JP8jm+Cy3hvHrW7ndTDcJ1w5mBiksqDBb8GpE2ksktFvDB/ykZ0mDpsZj20w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <!-- root env should be loaded first before datatable and csv env -->
-    <script defer src="assets/env/root_env.js"></script>
-    <script defer src="assets/env/datatable_env.js"></script>
-    <script defer src="assets/env/csv_env.js"></script>
+    <script defer src="assets/env/login_env.js"></script>
+
     <!-- // Env files end -->
 
-    <!-- custom js for this application -->
-    <script defer src="assets/datatables-custom-pagination.js"></script>
-    <!-- only to load after loading the env files -->
-    <script defer src="assets/datatables_custom.js"></script>
-    <script defer src="assets/csv.js"></script>
+    <script defer src="assets/login.js"></script>
+
 
     <!-- CDN LINKS Not necessary for now -->
     <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" /> -->
@@ -48,100 +47,33 @@
 </head>
 
 <body>
-    <div class="container mt-3 mb-3">
-        <!-- Search Form -->
-        <form class="row g-3" action="#" id="search_form">
-            <div class="col-md-3">
-                <label for="from" class="form-label">From Date:</label>
-                <input type="date" class="form-control" id="from" name="from" required />
-            </div>
-            <div class="col-md-3">
-                <label for="to" class="form-label">To Date:</label>
-                <input type="date" class="form-control" id="to" name="to" required />
-            </div>
+    <!-- login -->
+    <div id="login">
+        <div class="wrapper fadeInDown">
+            <div id="formContent">
+                <!-- Tabs Titles -->
 
-            <div class="col-md-3">
-                <label for="type" class="form-label">Search</label>
-                <select name="type" id="action" class="form-select" required>
-            <option value="Delivery" selected="selected">Delivered</option>
-            <option value="Bounce">Bounce</option>
-            <option value="Complaint">Complaint</option>
-          </select>
-            </div>
-            <div class="col-md-3">
-                <br />
+                <!-- Icon -->
+                <div class="fadeIn first">
+                    <img src="https://www.genesesolution.com/wp-content/uploads/2020/05/logo-genese.svg" id="icon" alt="User Icon" />
+                    <br>
+                    <h2>Mass Mail Marketing</h2>
+                </div>
 
-                <input type="submit" value="Request Data" class="btn btn-primary btn-lg" />
+
+                <!-- Login Form -->
+                <form id="login_form">
+                    <input type="text" id="username" class="fadeIn second" name="username" placeholder="username">
+                    <input type="text" id="password" class="fadeIn third" name="login" placeholder="password">
+                    <input type="submit" class="fadeIn fourth" value="Log In">
+                </form>
+
+                <!-- Remind Passowrd -->
+                <!-- <div id="formFooter">
+                    <a class="underlineHover" href="#">Forgot Password?</a>
+                </div> -->
+
             </div>
-        </form>
-        <!-- //Search Form -->
-        <br />
-        <hr />
-        <hr />
-        <br />
-        <!-- Div to show the data -->
-        <div id="show_requested_data_div" style="display: none">
-            <!-- Div for showing the export csv section -->
-            <div class="row g-3">
-                <h4 class="col-md-5">Export the Table below as CSV:</h4>
-                <div class="col-md-4" id="csv_export_btn_col">
-                    <button type="button" id="csv_export_btn" class="btn btn-outline-success">
-              Export: Table as CSV
-            </button>
-                </div>
-                <div class="col-md-4">
-                    <button type="button" id="csv_cancel_export_btn" class="btn btn-outline-danger" style="display: none">
-              Cancel Export: Table as CSV
-            </button>
-                </div>
-            </div>
-            <!-- // Div for showing the export csv section -->
-            <br />
-            <!-- Ongoing export with progressbar -->
-            <div id="csv_downloading_div" style="display: none">
-                <h6 class="text-info">Preparing Data to Export :</h6>
-                <div class="progress">
-                    <div class="
-                progress-bar progress-bar-striped progress-bar-animated
-                bg-success
-              " role="progressbar" style="width: 0%" aria-valuenow="25 " aria-valuemin="0 " aria-valuemax="100 " id="csv_progress_bar">
-                        25%
-                    </div>
-                </div>
-                <h6>Exporting for :</h6>
-                <div class="row g-3" id="csv_processing_message"></div>
-            </div>
-            <!-- //Ongoing export with progressbar -->
-            <br />
-            <hr />
-            <!-- display count of table -->
-            <h5>Table Count</h5>
-            <div class="row g-3" id="table_count_display">
-                <div class="fa-1x"><i class="fas fa-spinner fa-pulse"></i></div>
-            </div>
-            <!-- //display count of table -->
-            <!-- table to show data using datatables api -->
-            <table class="table table-bordered w-100" id="datatable">
-                <thead>
-                    <th>S.N</th>
-                    <th>Send Date and Time</th>
-                    <th>Time</th>
-                    <th>Subject</th>
-                    <th>From</th>
-                    <th>To</th>
-                    <th>
-                        Message<br /> Type
-                    </th>
-                    <th>
-                        Source<br /> IP
-                    </th>
-                    <th>
-                        SMTP<br /> Response
-                    </th>
-                </thead>
-                <tbody></tbody>
-            </table>
-            <!-- //tables to show data using datatables api -->
         </div>
     </div>
 </body>
