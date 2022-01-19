@@ -26,32 +26,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js" integrity="sha512-Tn2m0TIpgVyTzzvmxLNuqbSJH3JP8jm+Cy3hvHrW7ndTDcJ1w5mBiksqDBb8GpE2ksktFvDB/ykZ0mDpsZj20w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script>
-        
-            function setCookie(cname, cvalue, exdays) {
-                const d = new Date();
-                d.setTime(d.getTime() + (exdays*24*60*60*1000));
-                let expires = "expires="+ d.toUTCString();
-                document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-              }
+        function setCookie(cname, cvalue, exdays) {
+            const d = new Date();
+            d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+            let expires = "expires=" + d.toUTCString();
+            document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        }
 
-              function getCookie(cname) {
-                let name = cname + "=";
-                let decodedCookie = decodeURIComponent(document.cookie);
-                let ca = decodedCookie.split(';');
-                for(let i = 0; i <ca.length; i++) {
-                  let c = ca[i];
-                  while (c.charAt(0) == ' ') {
+        function getCookie(cname) {
+            let name = cname + "=";
+            let decodedCookie = decodeURIComponent(document.cookie);
+            let ca = decodedCookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') {
                     c = c.substring(1);
-                  }
-                  if (c.indexOf(name) == 0) {
-                    return c.substring(name.length, c.length);
-                  }
                 }
-                return "";
-              }
-              if(getCookie("login") !=true){
-                console.log(getCookie("login"));              };
-
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+        if (getCookie("login") != "true") {
+            window.location.replace("index.html");
+        };
     </script>
 
     <!-- root env should be loaded first before datatable and csv env -->
@@ -68,7 +67,7 @@
     <script defer src="assets/datatables_custom.js"></script>
     <script defer src="assets/csv.js"></script>
 
-    
+
 
 
     <!-- CDN LINKS Not necessary for now -->
@@ -85,7 +84,7 @@
 </head>
 
 <body>
-    <main id="main_content" >
+    <main id="main_content">
         <!-- main content to show the pagination -->
         <div class="container mt-3 mb-3">
             <!-- Search Form -->
